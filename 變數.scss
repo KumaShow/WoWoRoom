@@ -1,0 +1,46 @@
+$spacers: (
+  0: 0,
+  1: $spacer * .375,  // 6
+  2: $spacer * .5,    // 8
+  3: $spacer * .625,  // 10
+  4: $spacer * .75,   // 12
+  5: $spacer,         // 16
+  6: $spacer * 1.25,  // 20
+  7: $spacer * 1.5,   // 24
+  8: $spacer * 1.75,  // 28
+  9: $spacer * 1.875, // 30
+  10: $spacer * 2,    // 32
+  11: $spacer * 2.25, // 36
+  12: $spacer * 2.5,  // 40
+  13: $spacer * 3,    // 48
+  14: $spacer * 3.75, // 60
+  15: $spacer * 5     // 80
+) !default;
+
+
+$line-height-base:   1.35;
+$line-height-md:     1.375;
+$line-height-lg:     1.5;
+
+
+$h1-font-size:      40px;
+$h2-font-size:      32px;
+$h3-font-size:      28px;
+$h4-font-size:      24px;
+$h5-font-size:      20px;
+$h6-font-size:      16px;
+
+
+$primary:       #6c35f8; // $blue !default;
+$primaryDark:   #301E5F;
+
+
+$gray-100: #F8F9FA !default;
+$gray-200: #F8F8F8 !default;
+$gray-300: #ced4da !default;
+$gray-400: #B9B9B9 !default;
+$gray-500: #BFBFBF !default;
+$gray-600: #818A91 !default;
+$gray-700: #707070 !default;
+$gray-800: #797979 !default;
+$gray-900: #212529 !default;
