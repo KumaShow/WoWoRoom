@@ -25,7 +25,7 @@
 }
 
 // 好評推薦
-.review {
+.recommendation {
   
   &-wall {
     overflow-x: scroll;
@@ -68,27 +68,36 @@
 
 // 運送方式
 .transport {
-  &-list {
-    display: flex;
-    justify-content: center;
-  }
 
   &-item {
     position: relative;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
     &:not(:last-child) {
-      margin-right: 90px;
+      margin-bottom: 36px;
     }
     
     &:not(:last-child)::after {
       position: absolute;
       content: '';
-      top: 58px;
-      right: -50px;
-      width: 10px;
+      bottom: -28px;
+      width: 15px;
       height: 15px;
-      clip-path: polygon(100% 50%, 0 0, 0 100%);
+      clip-path: polygon(100% 0, 0 0, 50% 50%);
       background-color: #000;
-      transform: translateY(-50%);
+
+      @include respond-min(md) {
+        position: absolute;
+        content: '';
+        top: 58px;
+        right: -5px;
+        width: 10px;
+        height: 15px;
+        clip-path: polygon(100% 50%, 0 0, 0 100%);
+        background-color: #000;
+        transform: translateY(-50%);
+      }
     }
   }
 
@@ -101,13 +110,14 @@
     justify-content: center;
     align-items: center;
     margin-bottom: 8px;
-
+    text-align: center;
     .fa-solid {
       font-size: 50px;
     }
   }
 }
 
+// 產品列表
 .products {
   &-type {
     width: 255px;
@@ -145,4 +155,8 @@
       max-width: 160px;
     }
   }
+}
+
+.form-label {
+  width: 45px;
 }
