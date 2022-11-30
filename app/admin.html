@@ -1,0 +1,36 @@
+---
+title: WOWOROOM | 後台
+layout: ./app/layout.ejs
+engine: ejs
+current: admin
+---
+
+<!-- 統計圖表 -->
+<section class="my-14 container">
+  <h2 class="fs-3 text-center mb-15">全產品類別營收比重</h2>
+  <div id="chart"></div>
+</section>
+
+<!-- 訂單管理 -->
+<section class="container">
+  <div class="mb-6 d-flex justify-content-end">
+    <button class="btn btn-outline-black" id="btnDeleteAll">清除全部訂單</button>
+  </div>
+  <div class="order-section">
+    <table class="table table-bordered border-black">
+      <thead>
+        <tr>
+          <th scope="col">訂單編號</th>
+          <th scope="col">聯絡人</th>
+          <th scope="col">聯絡地址</th>
+          <th scope="col">電子郵件</th>
+          <th scope="col">訂單品項</th>
+          <th scope="col">訂單日期</th>
+          <th scope="col">訂單狀態</th>
+          <th scope="col">操作</th>
+        </tr>
+      </thead>
+      <tbody id="ordersList"></tbody>
+    </table>
+  </div>
+</section>
