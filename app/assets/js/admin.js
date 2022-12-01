@@ -1,55 +1,64 @@
-const api_path = "js-2022";
-const token = "kk6wTiHvysgMHTb81Mkv3q2j0M23";
 const urlAdminOrders = `https://livejs-api.hexschool.io/api/livejs/v1/admin/${api_path}/orders`;
 
-const orderList = document.querySelector('#ordersList');
-const btnDeleteAll = document.querySelector('#btnDeleteAll');
+let ordersData = [];
+
+// 訂單日期
+function orderCreateDate(ms){
+  const timer = new Date(ms * 1000);
+  const y = timer.getFullYear() ;
+  const m = timer.getMonth()+1 >= 10 
+    ? timer.getMonth()+1 
+    : `0${timer.getMonth()+1}`;
+  const d = timer.getDate() >= 10 
+    ? timer.getDate() 
+    : `0${timer.getDate()}`;
+  return `${y}/${m}/${d}`;
+};
 
 // 渲染訂單畫面
-function renderOrders(ordersData) {
+function renderOrders() {
+  const orderList = document.querySelector('#ordersList');
   let str = '';
+
   ordersData.forEach(order => {
     let status = order.paid ? '已處理' : '未處理';
-    // order.products.forEach(item => {
-    //   // str += `
-    //   //   <tr class="align-middle">
-    //   //     <th scope="row">10088377474</th>
-    //   //     <td>${order.user.name}<br>${order.user.tel}</td>
-    //   //     <td>${order.user.address}</td>
-    //   //     <td>${order.user.email}</td>
-    //   //     <td>${item.title}</td>
-    //   //     <td>2021/03/08</td>
-    //   //     <td class="text-info">
-    //   //       <a href="#!" class="text-decoration-underline link-info" data-paid="${order.paid}" data-id="${order.id}">
-    //   //         ${status}
-    //   //       </a>
-    //   //     </td>
-    //   //     <td>
-    //   //       <button type="button" class="btn btn-danger" data-id="${order.id}">刪除</button>
-    //   //     </td>
-    //   //   </tr>`
-    // })
+    const orderDate = orderCreateDate(order.createdAt);
+    const orderProducts = order.products.map(item => {
+      return `${item.title} x ${item.quantity}`;
+    }).join('<br>');
+
     str += `
     <tr class="align-middle">
-      <th scope="row">10088377474</th>
+      <th scope="row">${order.id}</th>
       <td>${order.user.name}<br>${order.user.tel}</td>
       <td>${order.user.address}</td>
       <td>${order.user.email}</td>
-      <td>${order.products[0].title}</td>
-      <td>2021/03/08</td>
+      <td>${orderProducts}</td>
+      <td>${orderDate}</td>
       <td class="text-info">
         <a href="#!" class="text-decoration-underline link-info" data-paid="${order.paid}" data-id="${order.id}">
           ${status}
         </a>
       </td>
       <td>
-        <button type="button" class="btn btn-danger" data-id="${order.id}">刪除</button>
+        <button type="button" class="btn btn-danger" data-id="${order.id}" >刪除</button>
       </td>
     </tr>`
   })
   orderList.innerHTML = str;
 }
-let ordersData = [];
+
+// 渲染按鈕 清除全部訂單
+function renderBtnDelete() {
+  const btnDeleteAll = document.querySelector('#btnDeleteAll');
+  if(ordersData.length === 0) {
+    btnDeleteAll.classList.add('d-none');
+  } else {
+    btnDeleteAll.classList.remove('d-none');
+  }
+  btnDeleteAll.addEventListener('click', deleteOrderAll);
+}
+
 // 取得訂單資料
 function getOrders() {
   axios.get(urlAdminOrders,{
@@ -57,51 +66,46 @@ function getOrders() {
       'Authorization': token
     }
   }).then(res => {
-      ordersData = res.data.orders;
-      console.log(ordersData); 
-      
-      if(ordersData.length === 0) {
-        btnDeleteAll.classList.add('d-none');
-      } else {
-        btnDeleteAll.classList.remove('d-none');
-      }
-
-      const category = {};
-      ordersData.forEach(order => {
-        order.products.forEach(item => {
-          console.log(item.category);
-          category[item.category] 
-            ? category[item.category]++ 
-            : category[item.category] = 1;
-        })
-      })
-      console.log(category);
-      renderOrders(ordersData);
-      renderChart(category);
-    });
+    ordersData = res.data.orders;
+    renderChart(ordersData);
+    renderOrders();
+    renderBtnDelete();
+  }).catch(() => {
+    swalOrdersEmpty();
+  });
 }
 
-// 訂單事件
-orderList.addEventListener('click', e => {
-  let isPaid = e.target.dataset.paid;
-  const orderId = e.target.dataset.id;
-  const target = e.target.nodeName;
-  if (target === 'A') {
-    editOrders(orderId, isPaid);
-  } else if (target === 'BUTTON') {
-    deleteOrder(orderId);
-  }else if(target !== 'A' || target !== 'BUTTON') {
-    return;
+// 訂單點擊事件監聽
+function orderListClick() {
+  const orderList = document.querySelector('#ordersList');
+  if (orderList) {
+    orderList.addEventListener('click', e=> {
+      e.preventDefault();
+      if(e.target.nodeName === 'A') {
+        let isPaid = e.target.dataset.paid;
+        const productId = e.target.dataset.id;
+        isPaid = isPaid === 'false' ? false : true;
+        editOrders(productId, isPaid);
+        return;
+      } else if (e.target.nodeName === 'BUTTON') {
+        const orderId = e.target.dataset.id;
+        deleteOrder(orderId);
+        return;
+      } else {
+        return;
+      }
+    })
   }
-})
+}
 
 // 修改訂單狀態
-function editOrders(id) {
+function editOrders(id, isPaid) {
+  isPaid = !isPaid;
   axios.put(urlAdminOrders,
     {
       "data": {
         "id": id,
-        "paid": true
+        "paid": isPaid
       }
     },
     {
@@ -110,11 +114,14 @@ function editOrders(id) {
         'Authorization': token
       }
     })
-  .then(res => {
-    console.log(res);
+  .then(() => {
     getOrders();
-  }).catch(err => console.log(err));
+    swalEditOrderSuccess();
+  }).catch(() => {
+    swalEditOrderError();
+  });
 }
+
 // 刪除單筆訂單
 function deleteOrder(id) {
   const urlDeleteOrder = `https://livejs-api.hexschool.io/api/livejs/v1/admin/${api_path}/orders/${id}`;
@@ -124,12 +131,12 @@ function deleteOrder(id) {
     }
   }).then(() => {
     getOrders();
+    swalDelOrderSuccess();
   }).catch(() => {
-    console.log('無該筆訂單資料');
+    swalDelOrderError();
   });
 }
-// 監聽清除全部訂單按鈕
-btnDeleteAll.addEventListener('click', deleteOrderAll);
+
 // 刪除所有訂單
 function deleteOrderAll() {
   axios.delete(urlAdminOrders,{
@@ -138,19 +145,34 @@ function deleteOrderAll() {
     }
   }).then(() => {
     getOrders();
-    alert('已刪除所有訂單!');
+    swalDelAllOrdersSuccess();
   }).catch(() => {
-    alert('目前沒有訂單資料!');
+    swalOrdersEmpty();
   })
 }
 
-// 圖表
-function renderChart(category) {
-  const categoryData = Object.entries(category);
+// c3 圖表
+function renderChart(ordersData) {
+  const chartDisplay = document.querySelector('#chart');
+  if(ordersData.length === 0){
+    chartDisplay.classList.add('d-none');
+  } else {
+    chartDisplay.classList.remove('d-none');
+  }
+  
+  let total = {};
+  ordersData.forEach(order => {
+    order.products.forEach(productItem => {
+      total[productItem.category] 
+        ? total[productItem.category] += productItem.price * productItem.quantity
+        : total[productItem.category] = productItem.price * productItem.quantity;
+    })
+  });
+  const chartData = Object.entries(total);
   const chart = c3.generate({
     bindto: "#chart",
     data: {
-      columns: categoryData,
+      columns: chartData,
       type: "pie",
       colors: {
         床架: "#DACBFF",
@@ -161,16 +183,15 @@ function renderChart(category) {
     },
   });
 }
-
-
-/* TODO 
-  1. 訂單品項 目前只有單筆、未抓取陣列
-  2. 訂單日期 根據送出日期產生
-  3. 訂單狀態 點擊切換狀態 (目前無法 toggle 切換)
-  5. 圖表 切換
-*/
-function initAdmin() {
-  getOrders();
+// TODO: 圖表切換
+function chartFilter() {
+  const chartFilter = document.querySelector('#chartFilter');
+  chartFilter.addEventListener('change', e => {
+    console.log(e.target);
+    console.log(e.target.value);
+  })
 }
 
-initAdmin();
+/* TODO 
+  1. 圖表 切換
+*/
