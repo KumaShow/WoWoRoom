@@ -19,7 +19,6 @@
       title: '錯誤...',
       text: '購物車數量不能小於1!',
       showConfirmButton: true,
-      timer: 2500
     })
   }
 
@@ -40,7 +39,16 @@
       title: '錯誤...',
       text: '購物車沒有商品!',
       showConfirmButton: true,
-      timer: 2500
+    })
+  }
+  
+  // 購物車空的無法送出訂單
+  function swalCartsEmpty() {
+    Swal.fire({
+      icon: 'error',
+      title: '購物車沒有商品!',
+      text: '快去大肆採購吧ヽ(✿ﾟ▽ﾟ)ノ',
+      showConfirmButton: true,
     })
   }
 
@@ -61,7 +69,6 @@
       title: '送出訂單失敗',
       text: '請確認訂單填寫是否正確',
       showConfirmButton: true,
-      timer: 2500
     })
   }
 
@@ -85,7 +92,6 @@
       icon: 'error',
       text: '目前沒有訂單資料!',
       showConfirmButton: true,
-      timer: 2500
     })
   }
 
@@ -105,7 +111,6 @@
       icon: 'error',
       text: '修改訂單狀態失敗!',
       showConfirmButton: true,
-      timer: 2500
     })
   }
 
@@ -126,6 +131,5 @@
       title: '刪除訂單失敗',
       text: '請確認訂單是否存在',
       showConfirmButton: true,
-      timer: 2500
     })
   }
