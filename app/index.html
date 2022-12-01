@@ -15,7 +15,7 @@ current: index
       </div>
     </div>
   
-    <div class="advantage text-center">
+    <div class="advantage text-center" id="advantageSection">
       <h3 class="mb-8">床墊優勢</h3>
       <ul class="row">
         <li class="col-md-4 mb-7 mb-md-0">
@@ -96,7 +96,7 @@ current: index
 </section>
 
 <!-- 好評推薦 -->
-<section class="recommendation pt-14 pb-15 bg-primary-dark">
+<section class="recommendation pt-14 pb-15 bg-primary-dark" id="recommendationSection">
   <div class="container">
     <h3 class="text-white text-center mb-10">好評推薦</h3>
   
@@ -269,7 +269,7 @@ current: index
 </section>
 
 <!-- 運送方式 -->
-<section class="transport pt-10 pb-15">
+<section class="transport pt-10 pb-15" id="transportSection">
   <div class="container">
     <h3 class="mb-10 text-center">運送方式</h3>
     <ul class="transport-list row">
@@ -306,7 +306,7 @@ current: index
 </section>
 
 <!-- 產品列表 -->
-<section class="products pb-14">
+<section class="products pb-14" id="productsSection">
   <div class="container">
     <select name="productType" id="productType" class="products-type mb-10">
       <option value="全部" selected>全部</option>
@@ -369,7 +369,7 @@ current: index
         <input type="text" class="form-control" id="userAddress" name="地址" placeholder="請輸入地址" data-validate>
       </div>
       <div class="mb-6">
-        <label for="payMethod">交易方式</label>
+        <label for="payMethod" class="mb-2">交易方式</label>
         <select class="form-select" id="payMethod" name="交易方式">
           <option value="1" selected>ATM</option>
           <option value="2">超商</option>
@@ -377,7 +377,7 @@ current: index
         </select>
       </div>
       <div class="text-center mt-13">
-        <button type="submit" class="btn btn-black px-14 py-3">送出預訂資料</button>
+        <button type="submit" class="btn btn-black px-14 py-3" onclick="submitForm()">送出預訂資料</button>
       </div>
     </form>
   </div>
