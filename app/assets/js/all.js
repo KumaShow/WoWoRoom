@@ -9,8 +9,30 @@ let productListData;
 let productCategory = {};
 let cartsData;
 
-// TODO: 驗證套件
-/*
+
+// 不同頁面分別執行初始化
+function locationPathChanged() {
+  if (location.pathname.includes('index')) {
+    // 首頁初始化
+    function init() {
+      getProducts();
+      getCarts();
+      recommendationDrag();
+      submitForm();
+    }
+    init();
+  } else {
+    // 後臺初始化
+    function initAdmin() {
+      getOrders();
+      orderListClick();
+    }
+    initAdmin();
+  }
+}
+locationPathChanged();
+
+// 驗證套件
 const constraints = {
   姓名: {
     presence: {
@@ -64,40 +86,18 @@ inputs.forEach((item) => {
     }
   });
 });
-*/
-
-// 不同頁面分別執行初始化
-function locationPathChanged() {
-  if (location.pathname.includes('index')) {
-    // 首頁初始化
-    function init() {
-      getProducts();
-      getCarts();
-      recommendationDrag();
-      
-    }
-    init();
-  } else {
-    // 後臺初始化
-    function initAdmin() {
-      getOrders();
-      orderListClick();
-    }
-    initAdmin();
-  }
-}
-locationPathChanged();
 
 // 表單送出監聽
 function submitForm() {
   form.addEventListener('submit', e => {
     e.preventDefault();
-    // console.log(errors);
-    // if (errors) {
-    //   showErrorMessage(errors);
-    // } else {
+    if (!cartsData.length) {
+      swalCartsEmpty();
+    } else if(errors) {
+      showErrorMessage(errors);
+    } else {
       addOrder();
-    // }
+    }
   });
 }
 
@@ -381,8 +381,3 @@ function recommendationDrag() {
     ele.addEventListener("mousedown", mouseDownHandler);
   });
 }
-
-
-/* TODO:
-  2. 驗證套件
-*/
