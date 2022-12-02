@@ -1,31 +1,7 @@
 "use strict";
 
 var api_path = "js-2022";
-var token = "kk6wTiHvysgMHTb81Mkv3q2j0M23"; // 不同頁面分別執行初始化
-
-function locationPathChanged() {
-  if (location.pathname.includes('index') || location.pathname === '/') {
-    // 首頁初始化
-    var init = function init() {
-      getProducts();
-      getCarts();
-      recommendationDrag();
-      submitForm();
-    };
-
-    init();
-  } else if (location.pathname.includes('admin')) {
-    // 後臺初始化
-    var initAdmin = function initAdmin() {
-      getOrders();
-      orderListClick();
-    };
-
-    initAdmin();
-  }
-}
-
-locationPathChanged();
+var token = "kk6wTiHvysgMHTb81Mkv3q2j0M23";
 "use strict";
 
 var urlAdminOrders = "https://livejs-api.hexschool.io/api/livejs/v1/admin/".concat(api_path, "/orders");
@@ -201,7 +177,7 @@ var productCategory = {};
 var cartsData; // 不同頁面分別執行初始化
 
 function locationPathChanged() {
-  if (location.pathname.includes('index')) {
+  if (location.pathname.includes('index') || location.pathname === '/') {
     // 首頁初始化
     var init = function init() {
       getProducts();
