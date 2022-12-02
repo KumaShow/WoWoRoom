@@ -2,39 +2,48 @@
 
 var api_path = "js-2022";
 var token = "kk6wTiHvysgMHTb81Mkv3q2j0M23";
+"use strict";
+
 var urlAdminOrders = "https://livejs-api.hexschool.io/api/livejs/v1/admin/".concat(api_path, "/orders");
-var orderList = document.querySelector('#ordersList');
-var btnDeleteAll = document.querySelector('#btnDeleteAll'); // 渲染訂單畫面
+var ordersData = []; // 訂單日期
 
-function renderOrders(ordersData) {
-  var str = '';
-  ordersData.forEach(function (order) {
-    var status = order.paid ? '已處理' : '未處理'; // order.products.forEach(item => {
-    //   // str += `
-    //   //   <tr class="align-middle">
-    //   //     <th scope="row">10088377474</th>
-    //   //     <td>${order.user.name}<br>${order.user.tel}</td>
-    //   //     <td>${order.user.address}</td>
-    //   //     <td>${order.user.email}</td>
-    //   //     <td>${item.title}</td>
-    //   //     <td>2021/03/08</td>
-    //   //     <td class="text-info">
-    //   //       <a href="#!" class="text-decoration-underline link-info" data-paid="${order.paid}" data-id="${order.id}">
-    //   //         ${status}
-    //   //       </a>
-    //   //     </td>
-    //   //     <td>
-    //   //       <button type="button" class="btn btn-danger" data-id="${order.id}">刪除</button>
-    //   //     </td>
-    //   //   </tr>`
-    // })
-
-    str += "\n    <tr class=\"align-middle\">\n      <th scope=\"row\">10088377474</th>\n      <td>".concat(order.user.name, "<br>").concat(order.user.tel, "</td>\n      <td>").concat(order.user.address, "</td>\n      <td>").concat(order.user.email, "</td>\n      <td>").concat(order.products[0].title, "</td>\n      <td>2021/03/08</td>\n      <td class=\"text-info\">\n        <a href=\"#!\" class=\"text-decoration-underline link-info\" data-paid=\"").concat(order.paid, "\" data-id=\"").concat(order.id, "\">\n          ").concat(status, "\n        </a>\n      </td>\n      <td>\n        <button type=\"button\" class=\"btn btn-danger\" data-id=\"").concat(order.id, "\">\u522A\u9664</button>\n      </td>\n    </tr>");
-  });
-  orderList.innerHTML = str;
+function orderCreateDate(ms) {
+  var timer = new Date(ms * 1000);
+  var y = timer.getFullYear();
+  var m = timer.getMonth() + 1 >= 10 ? timer.getMonth() + 1 : "0".concat(timer.getMonth() + 1);
+  var d = timer.getDate() >= 10 ? timer.getDate() : "0".concat(timer.getDate());
+  return "".concat(y, "/").concat(m, "/").concat(d);
 }
 
-var ordersData = []; // 取得訂單資料
+; // 渲染訂單畫面
+
+function renderOrders() {
+  var orderList = document.querySelector('#ordersList');
+  var str = '';
+  ordersData.forEach(function (order) {
+    var status = order.paid ? '已處理' : '未處理';
+    var orderDate = orderCreateDate(order.createdAt);
+    var orderProducts = order.products.map(function (item) {
+      return "".concat(item.title, " x ").concat(item.quantity);
+    }).join('<br>');
+    str += "\n    <tr class=\"align-middle\">\n      <th scope=\"row\">".concat(order.id, "</th>\n      <td>").concat(order.user.name, "<br>").concat(order.user.tel, "</td>\n      <td>").concat(order.user.address, "</td>\n      <td>").concat(order.user.email, "</td>\n      <td>").concat(orderProducts, "</td>\n      <td>").concat(orderDate, "</td>\n      <td class=\"text-info\">\n        <a href=\"#!\" class=\"text-decoration-underline link-info\" data-paid=\"").concat(order.paid, "\" data-id=\"").concat(order.id, "\">\n          ").concat(status, "\n        </a>\n      </td>\n      <td>\n        <button type=\"button\" class=\"btn btn-danger\" data-id=\"").concat(order.id, "\" >\u522A\u9664</button>\n      </td>\n    </tr>");
+  });
+  orderList.innerHTML = str;
+} // 渲染按鈕 清除全部訂單
+
+
+function renderBtnDelete() {
+  var btnDeleteAll = document.querySelector('#btnDeleteAll');
+
+  if (ordersData.length === 0) {
+    btnDeleteAll.classList.add('d-none');
+  } else {
+    btnDeleteAll.classList.remove('d-none');
+  }
+
+  btnDeleteAll.addEventListener('click', deleteOrderAll);
+} // 取得訂單資料
+
 
 function getOrders() {
   axios.get(urlAdminOrders, {
@@ -43,58 +52,57 @@ function getOrders() {
     }
   }).then(function (res) {
     ordersData = res.data.orders;
-    console.log(ordersData);
-
-    if (ordersData.length === 0) {
-      btnDeleteAll.classList.add('d-none');
-    } else {
-      btnDeleteAll.classList.remove('d-none');
-    }
-
-    var category = {};
-    ordersData.forEach(function (order) {
-      order.products.forEach(function (item) {
-        console.log(item.category);
-        category[item.category] ? category[item.category]++ : category[item.category] = 1;
-      });
-    });
-    console.log(category);
-    renderOrders(ordersData);
-    renderChart(category);
+    renderChart(ordersData);
+    renderOrders();
+    renderBtnDelete();
+  })["catch"](function (err) {
+    console.log(err);
   });
-} // 訂單事件
+} // 訂單點擊事件監聽
 
 
-orderList.addEventListener('click', function (e) {
-  var isPaid = e.target.dataset.paid;
-  var orderId = e.target.dataset.id;
-  var target = e.target.nodeName;
+function orderListClick() {
+  var orderList = document.querySelector('#ordersList');
 
-  if (target === 'A') {
-    editOrders(orderId, isPaid);
-  } else if (target === 'BUTTON') {
-    deleteOrder(orderId);
-  } else if (target !== 'A' || target !== 'BUTTON') {
-    return;
+  if (orderList) {
+    orderList.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      if (e.target.nodeName === 'A') {
+        var isPaid = e.target.dataset.paid;
+        var productId = e.target.dataset.id;
+        isPaid = isPaid === 'false' ? false : true;
+        editOrders(productId, isPaid);
+        return;
+      } else if (e.target.nodeName === 'BUTTON') {
+        var orderId = e.target.dataset.id;
+        deleteOrder(orderId);
+        return;
+      } else {
+        return;
+      }
+    });
   }
-}); // 修改訂單狀態
+} // 修改訂單狀態
 
-function editOrders(id) {
+
+function editOrders(id, isPaid) {
+  isPaid = !isPaid;
   axios.put(urlAdminOrders, {
     "data": {
       "id": id,
-      "paid": true
+      "paid": isPaid
     }
   }, {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': token
     }
-  }).then(function (res) {
-    console.log(res);
+  }).then(function () {
     getOrders();
-  })["catch"](function (err) {
-    return console.log(err);
+    swalSuccess('修改訂單成功', 'success');
+  })["catch"](function () {
+    swalError('修改頂單失敗', 'error');
   });
 } // 刪除單筆訂單
 
@@ -107,13 +115,12 @@ function deleteOrder(id) {
     }
   }).then(function () {
     getOrders();
+    swalSuccess('已刪除單筆訂單', 'success');
   })["catch"](function () {
-    console.log('無該筆訂單資料');
+    swalError('刪除單筆訂單失敗', 'error');
   });
-} // 監聽清除全部訂單按鈕
+} // 刪除所有訂單
 
-
-btnDeleteAll.addEventListener('click', deleteOrderAll); // 刪除所有訂單
 
 function deleteOrderAll() {
   axios["delete"](urlAdminOrders, {
@@ -122,19 +129,33 @@ function deleteOrderAll() {
     }
   }).then(function () {
     getOrders();
-    alert('已刪除所有訂單!');
+    swalSuccess('已刪除所有訂單', 'success');
   })["catch"](function () {
-    alert('目前沒有訂單資料!');
+    swalError('目前沒有訂單', 'warning');
   });
-} // 圖表
+} // c3 圖表
 
 
-function renderChart(category) {
-  var categoryData = Object.entries(category);
+function renderChart(ordersData) {
+  var chartDisplay = document.querySelector('#chart');
+
+  if (ordersData.length === 0) {
+    chartDisplay.classList.add('d-none');
+  } else {
+    chartDisplay.classList.remove('d-none');
+  }
+
+  var total = {};
+  ordersData.forEach(function (order) {
+    order.products.forEach(function (productItem) {
+      total[productItem.category] ? total[productItem.category] += productItem.price * productItem.quantity : total[productItem.category] = productItem.price * productItem.quantity;
+    });
+  });
+  var chartData = Object.entries(total);
   var chart = c3.generate({
     bindto: "#chart",
     data: {
-      columns: categoryData,
+      columns: chartData,
       type: "pie",
       colors: {
         床架: "#DACBFF",
@@ -144,34 +165,54 @@ function renderChart(category) {
       }
     }
   });
+} // TODO: 圖表切換
+
+
+function chartFilter() {
+  var chartFilter = document.querySelector('#chartFilter');
+  chartFilter.addEventListener('change', function (e) {
+    console.log(e.target);
+    console.log(e.target.value);
+  });
 }
 /* TODO 
-  1. 訂單品項 目前只有單筆、未抓取陣列
-  2. 訂單日期 根據送出日期產生
-  3. 訂單狀態 點擊切換狀態 (目前無法 toggle 切換)
-  5. 圖表 切換
+  1. 圖表 切換
 */
-
-
-function initAdmin() {
-  getOrders();
-}
-
-initAdmin();
 "use strict";
 
-var api_path = "js-2022";
 var urlProducts = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/products");
 var urlCarts = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts");
 var productList = document.querySelector('#productList');
 var form = document.querySelector('#orderForm');
-var inputs = document.querySelectorAll("[data-validate]");
-var messages = document.querySelectorAll("[data-msg]"); // let pathName = location.pathname;
-// if(pathName.includes('index')) {}
-// TODO: 驗證套件
+var productListData;
+var productCategory = {};
+var cartsData; // 不同頁面分別執行初始化
 
-/*
-const constraints = {
+function locationPathChanged() {
+  if (location.pathname.includes('index')) {
+    // 首頁初始化
+    var init = function init() {
+      getProducts();
+      getCarts();
+      recommendationDrag();
+      submitForm();
+    };
+
+    init();
+  } else {
+    // 後臺初始化
+    var initAdmin = function initAdmin() {
+      getOrders();
+      orderListClick();
+    };
+
+    initAdmin();
+  }
+}
+
+locationPathChanged(); // 驗證套件
+
+var constraints = {
   姓名: {
     presence: {
       message: "是必填欄位"
@@ -200,41 +241,56 @@ const constraints = {
     }
   }
 };
-const errors = validate(form, constraints);
+var errors = validate(form, constraints); // 顯示訂單驗證錯誤資訊
 
-// 顯示訂單驗證錯誤資訊
 function showErrorMessage(errors) {
-  messages.forEach((item) => {
+  var messages = document.querySelectorAll("[data-msg]");
+  messages.forEach(function (item) {
     item.textContent = "";
     item.textContent = errors[item.dataset.msg];
   });
-}
+} // 監控所有 input 的操作
 
-// 監控所有 input 的操作
-inputs.forEach((item) => {
-  item.addEventListener("change", e => {
+
+function checkFormInput() {
+  var inputs = document.querySelectorAll("[data-validate]");
+  inputs.forEach(function (item) {
+    item.addEventListener("change", function (e) {
+      e.preventDefault(); // 先清空錯誤訊息
+
+      item.previousElementSibling.textContent = "";
+      var targetName = item.name;
+      var errors = validate(form, constraints); // 針對正在操作的欄位呈現警告訊息
+
+      if (errors) {
+        document.querySelector("[data-msg='".concat(targetName, "']")).textContent = errors[targetName];
+      }
+    });
+  });
+} // 表單送出監聽
+
+
+function submitForm() {
+  var btnSubmitForm = document.querySelector('#btnSubmitForm');
+  btnSubmitForm.addEventListener('click', function (e) {
     e.preventDefault();
-    const targetName = item.name;
-    const errors = validate(form, constraints);
-    item.previousElementSibling.textContent = "";
-    // 針對正在操作的欄位呈現警告訊息
+
+    if (!cartsData.length) {
+      swalError('購物車沒有商品!', 'error', '快去大肆採購吧ヽ(✿ﾟ▽ﾟ)ノ');
+      return;
+    }
+
+    checkFormInput();
+    var errors = validate(form, constraints); // 有錯誤則顯示錯誤訊息
+
     if (errors) {
-      document.querySelector(`[data-msg='${targetName}']`).textContent =
-        errors[targetName];
+      showErrorMessage(errors);
+    } else {
+      addOrder();
     }
   });
-});
-*/
-// 表單送出監聽
+} // 送出訂單
 
-form.addEventListener('submit', function (e) {
-  e.preventDefault(); // console.log(errors);
-  // if (errors) {
-  //   showErrorMessage(errors);
-  // } else {
-
-  addOrder(); // }
-}); // 送出訂單
 
 function addOrder() {
   var urlOrder = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/orders");
@@ -254,22 +310,43 @@ function addOrder() {
       }
     }
   };
-  axios.post(urlOrder, order).then(function (res) {
+  axios.post(urlOrder, order).then(function () {
     form.reset();
     getCarts();
-    alert('已送出訂單');
-  })["catch"](function (err) {
-    return console.log('提交訂單失敗，請重新確認');
+    swalSuccess('已送出訂單', 'success');
+  })["catch"](function () {
+    swalError('訂單送出失敗', 'error', '請確認訂單是否填寫正確!');
   });
 } // 取得產品列表
 
 
 function getProducts() {
   axios.get(urlProducts).then(function (res) {
-    var productListData = res.data.products;
+    productListData = res.data.products;
     renderProductList(productListData);
+    productListClick();
+    productFilterChange(productListData);
   })["catch"](function (err) {
     console.log(err);
+    console.log('產品列表沒有資料');
+  });
+} // 產品篩選
+
+
+function productFilterChange() {
+  var productType = document.querySelector('#productType');
+  productType.addEventListener('change', function (e) {
+    var category = e.target.value;
+
+    if (category === '全部') {
+      renderProductList(productListData);
+      return;
+    }
+
+    var filterArr = productListData.filter(function (item) {
+      return item.category === category;
+    });
+    renderProductList(filterArr);
   });
 } // 渲染產品列表
 
@@ -277,21 +354,23 @@ function getProducts() {
 function renderProductList(productListData) {
   var str = '';
   productListData.forEach(function (product) {
-    str += "\n      <li class=\"products-item col-md-6 col-lg-4 col-xl-3\">\n        <div class=\"card p-0\">\n          <span class=\"products-tag\">\u65B0\u54C1</span>\n          <img src=\"".concat(product.images, "\" class=\"card-img-top\" alt=\"").concat(product.title, "\">\n          <div class=\"card-body p-0\">\n            <button type=\"button\" class=\"btn btn-black rounded-0 pb-2 w-100\" data-id=\"").concat(product.id, "\">\u52A0\u5165\u8CFC\u7269\u8ECA</button>\n            <h5 class=\"card-title pb-2\">").concat(product.title, "</h5>\n            <p class=\"card-text fs-5 text-decoration-line-through\">NT$").concat(product.origin_price, "</p>\n            <p class=\"card-text fs-3\">NT$").concat(product.price, "</p>\n          </div>\n        </div>\n      </li>\n    ");
+    str += "\n      <li class=\"products-item col-md-6 col-lg-4 col-xl-3\">\n        <div class=\"card p-0\">\n          <span class=\"products-tag\">\u65B0\u54C1</span>\n          <img src=\"".concat(product.images, "\" class=\"card-img-top\" alt=\"").concat(product.title, "\">\n          <div class=\"card-body p-0\">\n            <button type=\"button\" class=\"btn btn-black rounded-0 pb-2 w-100\" data-id=\"").concat(product.id, "\">\u52A0\u5165\u8CFC\u7269\u8ECA</button>\n            <h5 class=\"card-title pb-2\">").concat(product.title, "</h5>\n            <p class=\"card-text fs-5 text-decoration-line-through\">NT$").concat(toThousand(product.origin_price), "</p>\n            <p class=\"card-text fs-3\">NT$").concat(toThousand(product.price), "</p>\n          </div>\n        </div>\n      </li>\n    ");
   });
   productList.innerHTML = str;
-}
+} // 加入購物車
 
-var cartsData; // 加入購物車
 
-productList.addEventListener('click', function (e) {
-  if (e.target.nodeName !== 'BUTTON') {
-    return;
-  }
+function productListClick() {
+  productList.addEventListener('click', function (e) {
+    if (e.target.nodeName !== 'BUTTON') {
+      return;
+    }
 
-  var productId = e.target.dataset.id;
-  addToCarts(productId);
-}); // 取得購物車資料
+    var productId = e.target.dataset.id;
+    addToCarts(productId);
+  });
+} // 取得購物車資料
+
 
 function getCarts() {
   axios.get(urlCarts).then(function (res) {
@@ -310,16 +389,20 @@ function renderCarts(cartsData) {
 
   if (cartsData.length === 0) {
     thead.classList.add('d-none');
-    cartsList.innerHTML = "\n      <tr class=\"text-center\">\n        <td class=\"border-0 fs-3\">\u76EE\u524D\u8CFC\u7269\u8ECA\u7121\u5546\u54C1!</td>\n      </tr>\n    ";
+    cartsList.innerHTML = "\n      <tr class=\"text-center\">\n        <td class=\"border-0 fs-3\">\u76EE\u524D\u8CFC\u7269\u8ECA\u7121\u5546\u54C1!</td>\n      </tr>";
   } else {
+    var _cartsList = document.querySelector('#cartsList');
+
     thead.classList.remove('d-none');
     cartsData.forEach(function (item) {
       total += item.quantity * item.product.price;
-      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(item.product.price, "</td>\n          <td>").concat(item.quantity, "</td>\n          <td>NT$").concat(item.product.price * item.quantity, "</td>\n          <td class=\"text-end\">\n            <button type=\"button\" class=\"border-0 bg-transparent\" data-id=\"").concat(item.id, "\" \n            onClick=\"deleteCartsItem('").concat(item.id, "')\">\n              <i class=\"fa-solid fa-x\"></i>\n            </button>\n          </td>\n        </tr>\n      ");
+      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td>").concat(item.quantity, "</td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
     }); // 總金額
 
-    str += "\n      <tr class=\"carts-total\">\n        <td class=\"border-0\">\n          <button type=\"button\" class=\"btn btn-outline-black py-3 px-6\" onclick=\"deleteAllCarts()\">\u522A\u9664\u6240\u6709\u54C1\u9805</button>\n        </td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\">\n          <p>\u7E3D\u91D1\u984D</p>\n        </td>\n        <td class=\"border-0 fs-3\">NT$".concat(total, "</td>\n      </tr>\n    ");
-    cartsList.innerHTML = str;
+    str += "\n      <tr class=\"carts-total\">\n        <td class=\"border-0\">\n          <button type=\"button\" class=\"btn btn-outline-black py-3 px-6\" id=\"btnClearCarts\">\u522A\u9664\u6240\u6709\u54C1\u9805</button>\n        </td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\">\n          <p>\u7E3D\u91D1\u984D</p>\n        </td>\n        <td class=\"border-0 fs-3\">NT$".concat(toThousand(total), "</td>\n      </tr>\n    ");
+    _cartsList.innerHTML = str;
+    btnClearCartsClick();
+    cartsListClick();
   }
 } // 加入購物車
 
@@ -337,38 +420,169 @@ function addToCarts(id) {
       "quantity": num
     }
   };
-  axios.post(urlCarts, data).then(function (res) {
+  axios.post(urlCarts, data).then(function () {
     getCarts();
-    console.log('已加入購物車'); // alert("已加入購物車");
-  })["catch"](function (err) {
-    return console.log(err);
+    swalSuccess('已加入購物車', 'success');
+  })["catch"](function () {
+    swalError('未加入購物車', 'error');
   });
-} // 刪除購物車單筆(設置在 dom onclick)
+} // 綁定清除購物車按鈕
+
+
+function btnClearCartsClick() {
+  var btnClearCarts = document.querySelector('#btnClearCarts');
+  btnClearCarts.addEventListener('click', function (e) {
+    e.preventDefault();
+    deleteAllCarts();
+  });
+} // 購物車點擊事件
+
+
+function cartsListClick() {
+  cartsList.addEventListener('click', function (e) {
+    e.preventDefault();
+    var cartItemId = e.target.getAttribute('data-id');
+
+    if (cartItemId === null) {
+      return;
+    } else {
+      deleteCartsItem(cartItemId);
+      return;
+    } // if (e.target.nodeName === 'SELECT'){
+    //   e.target.addEventListener('change', e => {
+    //     const cartItemNum = e.target.value;
+    //     const cartItemId = e.target.dataset.id;
+    //     editCartsNum(cartItemId, Number(cartItemNum));
+    //     return;
+    //   })
+
+  });
+} // 刪除購物車單筆
 
 
 function deleteCartsItem(id) {
   var url = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts/").concat(id);
-  axios["delete"](url, id).then(function (res) {
+  axios["delete"](url, id).then(function () {
     getCarts();
-  })["catch"](function (err) {
+  })["catch"](function () {
     console.log('沒有這筆資料');
   });
-} // 刪除購物車所有品項(設置在 dom onclick)
+} // 刪除購物車所有品項
 
 
 function deleteAllCarts() {
-  axios["delete"](urlCarts).then(function (res) {
-    alert('購物車已清空');
+  axios["delete"](urlCarts).then(function () {
+    swalSuccess('已清空購物車', 'success');
     getCarts();
   })["catch"](function (err) {
     console.log(err);
+    swalError('清空失敗', 'error');
+  });
+} // 千分位
+
+
+function toThousand(num) {
+  var numStr = num.toString();
+  return numStr.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+} // 好評推薦拖拉功能
+
+
+function recommendationDrag() {
+  document.addEventListener("DOMContentLoaded", function () {
+    var ele = document.querySelector(".recommendation-wall");
+    ele.style.cursor = "grab";
+    var pos = {
+      top: 0,
+      left: 0,
+      x: 0,
+      y: 0
+    };
+
+    var mouseDownHandler = function mouseDownHandler(e) {
+      ele.style.cursor = "grabbing";
+      ele.style.userSelect = "none";
+      pos = {
+        left: ele.scrollLeft,
+        top: ele.scrollTop,
+        // Get the current mouse position
+        x: e.clientX,
+        y: e.clientY
+      };
+      document.addEventListener("mousemove", mouseMoveHandler);
+      document.addEventListener("mouseup", mouseUpHandler);
+    };
+
+    var mouseMoveHandler = function mouseMoveHandler(e) {
+      // How far the mouse has been moved
+      var dx = e.clientX - pos.x;
+      var dy = e.clientY - pos.y; // Scroll the element
+
+      ele.scrollTop = pos.top - dy;
+      ele.scrollLeft = pos.left - dx;
+    };
+
+    var mouseUpHandler = function mouseUpHandler() {
+      ele.style.cursor = "grab";
+      ele.style.removeProperty("user-select");
+      document.removeEventListener("mousemove", mouseMoveHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
+    }; // Attach the handler
+
+
+    ele.addEventListener("mousedown", mouseDownHandler);
+  });
+} // 渲染購物車數量下拉
+// function renderCartsNum(num) {
+//   const maxNum = 10;
+//   const select = document.querySelector('[data-qty]');
+//   let str = '';
+//   for(let i = 1; i <= maxNum; i++) {
+//     str += `<option value="${i}">${i}</option>`
+//   }
+//   console.log(select);
+// select.innerHTML = str;
+// select.value = num;
+// return str;
+// }
+// 編輯購物車產品數量
+// function editCartsNum(id, num) {
+//   const data = {
+//   "data": {
+//     "id": id,
+//     "quantity": num
+//   }
+// }
+//   axios.patch(urlCarts, data)
+//     .then(res => {
+//       // console.log(res.data.carts);
+//       const carts = res.data.carts;
+//       console.log(carts);
+//       renderCarts(carts);
+//     })
+//     .catch(err => {
+//       console.log(err);
+//     })
+// }
+"use strict";
+
+// Alert 成功
+function swalSuccess(title, status, text) {
+  Swal.fire({
+    icon: status,
+    title: title,
+    text: text,
+    showConfirmButton: true,
+    timer: 2500
+  });
+} // Alert 失敗
+
+
+function swalError(title, status, text) {
+  Swal.fire({
+    icon: status,
+    title: title,
+    text: text,
+    showConfirmButton: true
   });
 }
-
-function init() {
-  getProducts();
-  getCarts();
-}
-
-init();
 //# sourceMappingURL=all.js.map
