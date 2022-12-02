@@ -177,7 +177,7 @@ var productCategory = {};
 var cartsData; // 不同頁面分別執行初始化
 
 function locationPathChanged() {
-  if (location.pathname.includes('index') || location.pathname === '/') {
+  if (location.pathname.includes('index') || location.pathname === '/' || location.pathname === /WoWoRoom/) {
     // 首頁初始化
     var init = function init() {
       getProducts();
