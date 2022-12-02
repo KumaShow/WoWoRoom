@@ -70,8 +70,8 @@ function getOrders() {
     renderChart(ordersData);
     renderOrders();
     renderBtnDelete();
-  }).catch(() => {
-    swalOrdersEmpty();
+  }).catch(err => {
+    console.log(err);
   });
 }
 
@@ -116,9 +116,9 @@ function editOrders(id, isPaid) {
     })
   .then(() => {
     getOrders();
-    swalEditOrderSuccess();
+    swalSuccess('修改訂單成功', 'success');
   }).catch(() => {
-    swalEditOrderError();
+    swalError('修改頂單失敗', 'error');
   });
 }
 
@@ -131,9 +131,9 @@ function deleteOrder(id) {
     }
   }).then(() => {
     getOrders();
-    swalDelOrderSuccess();
+    swalSuccess('已刪除單筆訂單', 'success');
   }).catch(() => {
-    swalDelOrderError();
+    swalError('刪除單筆訂單失敗', 'error');
   });
 }
 
@@ -145,9 +145,9 @@ function deleteOrderAll() {
     }
   }).then(() => {
     getOrders();
-    swalDelAllOrdersSuccess();
+    swalSuccess('已刪除所有訂單', 'success');
   }).catch(() => {
-    swalOrdersEmpty();
+    swalError('目前沒有訂單', 'warning');
   })
 }
 
