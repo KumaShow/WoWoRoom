@@ -10,7 +10,8 @@ let cartsData;
 // 不同頁面分別執行初始化
 function locationPathChanged() {
   if (location.pathname.includes('index') ||
-      location.pathname === '/') {
+      location.pathname === '/' ||
+      location.pathname === /WoWoRoom/) {
     // 首頁初始化
     function init() {
       getProducts();
@@ -19,13 +20,15 @@ function locationPathChanged() {
       submitForm();
     }
     init();
-  } else {
+    return;
+  } else if (location.pathname.includes('admin')){
     // 後臺初始化
     function initAdmin() {
       getOrders();
       orderListClick();
     }
     initAdmin();
+    return;
   }
 }
 locationPathChanged();
