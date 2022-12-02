@@ -146,16 +146,15 @@ function addOrder() {
 // 取得產品列表
 function getProducts() {
   axios.get(urlProducts)
-  .then((res) => {
-    productListData = res.data.products;
-    renderProductList(productListData);
-    productListClick();
-    productFilterChange(productListData);
-  })
-  .catch((err) => {
-    console.log(err);
-    console.log('產品列表沒有資料');
-  });
+    .then((res) => {
+      productListData = res.data.products;
+      renderProductList(productListData);
+      productListClick();
+      productFilterChange(productListData);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }
 
 // 產品篩選
@@ -218,7 +217,7 @@ function getCarts() {
       renderCarts(cartsData);
     })
     .catch(err => {
-      console.log(err);
+      // console.log(err);
     });
 }
 
@@ -246,7 +245,9 @@ function renderCarts(cartsData) {
             <p class="lh-lg">${item.product.title}</p>
           </th>
           <td>NT$${toThousand(item.product.price)}</td>
-          <td>${item.quantity}</td>
+          <td>
+            ${item.quantity}
+          </td>
           <td>NT$${toThousand(item.product.price * item.quantity)}</td>
           <td class="text-end">
             <a href="#!" class="border-0 bg-transparent link-black" data-id="${item.id}">
@@ -309,25 +310,17 @@ function btnClearCartsClick() {
   });
 }
 
-// 購物車點擊事件
+// 購物車刪除事件
 function cartsListClick() {
   cartsList.addEventListener('click', e => {
     e.preventDefault();
     const cartItemId = e.target.getAttribute('data-id');
-
+  
     if(cartItemId === null) {
       return;
     } else {
       deleteCartsItem(cartItemId);
-      return;
     }
-    // if (e.target.nodeName === 'SELECT'){
-    //   e.target.addEventListener('change', e => {
-    //     const cartItemNum = e.target.value;
-    //     const cartItemId = e.target.dataset.id;
-    //     editCartsNum(cartItemId, Number(cartItemNum));
-    //     return;
-    //   })
   });
 }
 
@@ -404,38 +397,3 @@ function recommendationDrag() {
     ele.addEventListener("mousedown", mouseDownHandler);
   });
 }
-
-// 渲染購物車數量下拉
-// function renderCartsNum(num) {
-//   const maxNum = 10;
-//   const select = document.querySelector('[data-qty]');
-//   let str = '';
-//   for(let i = 1; i <= maxNum; i++) {
-//     str += `<option value="${i}">${i}</option>`
-//   }
-//   console.log(select);
-  // select.innerHTML = str;
-  // select.value = num;
-  // return str;
-// }
-
-// 編輯購物車產品數量
-// function editCartsNum(id, num) {
-//   const data = {
-//   "data": {
-//     "id": id,
-//     "quantity": num
-//   }
-// }
-
-//   axios.patch(urlCarts, data)
-//     .then(res => {
-//       // console.log(res.data.carts);
-//       const carts = res.data.carts;
-//       console.log(carts);
-//       renderCarts(carts);
-//     })
-//     .catch(err => {
-//       console.log(err);
-//     })
-// }

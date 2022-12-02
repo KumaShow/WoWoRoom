@@ -168,6 +168,7 @@ function renderChart(ordersData) {
         : total[productItem.category] = productItem.price * productItem.quantity;
     })
   });
+
   const chartData = Object.entries(total);
   const chart = c3.generate({
     bindto: "#chart",
@@ -183,15 +184,3 @@ function renderChart(ordersData) {
     },
   });
 }
-// TODO: 圖表切換
-function chartFilter() {
-  const chartFilter = document.querySelector('#chartFilter');
-  chartFilter.addEventListener('change', e => {
-    console.log(e.target);
-    console.log(e.target.value);
-  })
-}
-
-/* TODO 
-  1. 圖表 切換
-*/
