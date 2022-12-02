@@ -187,7 +187,8 @@ function locationPathChanged() {
     };
 
     init();
-  } else {
+    return;
+  } else if (location.pathname.includes('admin')) {
     // 後臺初始化
     var initAdmin = function initAdmin() {
       getOrders();
@@ -195,6 +196,7 @@ function locationPathChanged() {
     };
 
     initAdmin();
+    return;
   }
 }
 
