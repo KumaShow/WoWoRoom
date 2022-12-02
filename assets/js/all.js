@@ -1,7 +1,31 @@
 "use strict";
 
 var api_path = "js-2022";
-var token = "kk6wTiHvysgMHTb81Mkv3q2j0M23";
+var token = "kk6wTiHvysgMHTb81Mkv3q2j0M23"; // 不同頁面分別執行初始化
+
+function locationPathChanged() {
+  if (location.pathname.includes('index') || location.pathname === '/') {
+    // 首頁初始化
+    var init = function init() {
+      getProducts();
+      getCarts();
+      recommendationDrag();
+      submitForm();
+    };
+
+    init();
+  } else if (location.pathname.includes('admin')) {
+    // 後臺初始化
+    var initAdmin = function initAdmin() {
+      getOrders();
+      orderListClick();
+    };
+
+    initAdmin();
+  }
+}
+
+locationPathChanged();
 "use strict";
 
 var urlAdminOrders = "https://livejs-api.hexschool.io/api/livejs/v1/admin/".concat(api_path, "/orders");
@@ -165,19 +189,7 @@ function renderChart(ordersData) {
       }
     }
   });
-} // TODO: 圖表切換
-
-
-function chartFilter() {
-  var chartFilter = document.querySelector('#chartFilter');
-  chartFilter.addEventListener('change', function (e) {
-    console.log(e.target);
-    console.log(e.target.value);
-  });
 }
-/* TODO 
-  1. 圖表 切換
-*/
 "use strict";
 
 var urlProducts = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/products");
@@ -328,7 +340,6 @@ function getProducts() {
     productFilterChange(productListData);
   })["catch"](function (err) {
     console.log(err);
-    console.log('產品列表沒有資料');
   });
 } // 產品篩選
 
@@ -376,8 +387,7 @@ function getCarts() {
   axios.get(urlCarts).then(function (res) {
     cartsData = res.data.carts;
     renderCarts(cartsData);
-  })["catch"](function (err) {
-    console.log(err);
+  })["catch"](function (err) {// console.log(err);
   });
 } // 顯示購物車資料
 
@@ -396,7 +406,7 @@ function renderCarts(cartsData) {
     thead.classList.remove('d-none');
     cartsData.forEach(function (item) {
       total += item.quantity * item.product.price;
-      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td>").concat(item.quantity, "</td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
+      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td>\n            ").concat(item.quantity, "\n          </td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
     }); // 總金額
 
     str += "\n      <tr class=\"carts-total\">\n        <td class=\"border-0\">\n          <button type=\"button\" class=\"btn btn-outline-black py-3 px-6\" id=\"btnClearCarts\">\u522A\u9664\u6240\u6709\u54C1\u9805</button>\n        </td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\">\n          <p>\u7E3D\u91D1\u984D</p>\n        </td>\n        <td class=\"border-0 fs-3\">NT$".concat(toThousand(total), "</td>\n      </tr>\n    ");
@@ -435,7 +445,7 @@ function btnClearCartsClick() {
     e.preventDefault();
     deleteAllCarts();
   });
-} // 購物車點擊事件
+} // 購物車刪除事件
 
 
 function cartsListClick() {
@@ -447,15 +457,7 @@ function cartsListClick() {
       return;
     } else {
       deleteCartsItem(cartItemId);
-      return;
-    } // if (e.target.nodeName === 'SELECT'){
-    //   e.target.addEventListener('change', e => {
-    //     const cartItemNum = e.target.value;
-    //     const cartItemId = e.target.dataset.id;
-    //     editCartsNum(cartItemId, Number(cartItemNum));
-    //     return;
-    //   })
-
+    }
   });
 } // 刪除購物車單筆
 
@@ -531,38 +533,7 @@ function recommendationDrag() {
 
     ele.addEventListener("mousedown", mouseDownHandler);
   });
-} // 渲染購物車數量下拉
-// function renderCartsNum(num) {
-//   const maxNum = 10;
-//   const select = document.querySelector('[data-qty]');
-//   let str = '';
-//   for(let i = 1; i <= maxNum; i++) {
-//     str += `<option value="${i}">${i}</option>`
-//   }
-//   console.log(select);
-// select.innerHTML = str;
-// select.value = num;
-// return str;
-// }
-// 編輯購物車產品數量
-// function editCartsNum(id, num) {
-//   const data = {
-//   "data": {
-//     "id": id,
-//     "quantity": num
-//   }
-// }
-//   axios.patch(urlCarts, data)
-//     .then(res => {
-//       // console.log(res.data.carts);
-//       const carts = res.data.carts;
-//       console.log(carts);
-//       renderCarts(carts);
-//     })
-//     .catch(err => {
-//       console.log(err);
-//     })
-// }
+}
 "use strict";
 
 // Alert 成功
