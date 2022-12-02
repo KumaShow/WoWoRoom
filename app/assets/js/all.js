@@ -2,13 +2,10 @@ const urlProducts = `https://livejs-api.hexschool.io/api/livejs/v1/customer/${ap
 const urlCarts = `https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`;
 const productList = document.querySelector('#productList');
 const form = document.querySelector('#orderForm');
-const inputs = document.querySelectorAll("[data-validate]");
-const messages = document.querySelectorAll("[data-msg]");
 
 let productListData;
 let productCategory = {};
 let cartsData;
-
 
 // 不同頁面分別執行初始化
 function locationPathChanged() {
@@ -66,6 +63,7 @@ const errors = validate(form, constraints);
 
 // 顯示訂單驗證錯誤資訊
 function showErrorMessage(errors) {
+  const messages = document.querySelectorAll("[data-msg]");
   messages.forEach((item) => {
     item.textContent = "";
     item.textContent = errors[item.dataset.msg];
@@ -73,27 +71,39 @@ function showErrorMessage(errors) {
 }
 
 // 監控所有 input 的操作
-inputs.forEach((item) => {
-  item.addEventListener("change", e => {
-    e.preventDefault();
-    const targetName = item.name;
-    const errors = validate(form, constraints);
-    item.previousElementSibling.textContent = "";
-    // 針對正在操作的欄位呈現警告訊息
-    if (errors) {
-      document.querySelector(`[data-msg='${targetName}']`).textContent =
-        errors[targetName];
-    }
+function checkFormInput() {
+  const inputs = document.querySelectorAll("[data-validate]");
+  inputs.forEach((item) => {
+    item.addEventListener("change", e => {
+      e.preventDefault();
+      // 先清空錯誤訊息
+      item.previousElementSibling.textContent = "";
+      const targetName = item.name;
+      const errors = validate(form, constraints);
+      // 針對正在操作的欄位呈現警告訊息
+      if (errors) {
+        document.querySelector(`[data-msg='${targetName}']`).textContent =
+          errors[targetName];
+      }
+    });
   });
-});
+}
 
 // 表單送出監聽
 function submitForm() {
-  form.addEventListener('submit', e => {
+  const btnSubmitForm = document.querySelector('#btnSubmitForm');
+  btnSubmitForm.addEventListener('click', e => {
     e.preventDefault();
     if (!cartsData.length) {
-      swalCartsEmpty();
-    } else if(errors) {
+      swalError('購物車沒有商品!', 'error', '快去大肆採購吧ヽ(✿ﾟ▽ﾟ)ノ');
+      return;
+    } 
+
+    checkFormInput();
+
+    let errors = validate(form, constraints);
+    // 有錯誤則顯示錯誤訊息
+    if(errors) {
       showErrorMessage(errors);
     } else {
       addOrder();
@@ -126,10 +136,10 @@ function addOrder() {
     .then(() => {
       form.reset();
       getCarts();
-      swalAddOrderSuccess();
+      swalSuccess('已送出訂單', 'success');
     })
     .catch(() => {
-      swalAddOrderError();
+      swalError('訂單送出失敗', 'error', '請確認訂單是否填寫正確!');
     });
 }
 
@@ -179,8 +189,8 @@ function renderProductList(productListData) {
           <div class="card-body p-0">
             <button type="button" class="btn btn-black rounded-0 pb-2 w-100" data-id="${product.id}">加入購物車</button>
             <h5 class="card-title pb-2">${product.title}</h5>
-            <p class="card-text fs-5 text-decoration-line-through">NT$${product.origin_price}</p>
-            <p class="card-text fs-3">NT$${product.price}</p>
+            <p class="card-text fs-5 text-decoration-line-through">NT$${toThousand(product.origin_price)}</p>
+            <p class="card-text fs-3">NT$${toThousand(product.price)}</p>
           </div>
         </div>
       </li>
@@ -207,8 +217,8 @@ function getCarts() {
       cartsData = res.data.carts;
       renderCarts(cartsData);
     })
-    .catch(() => {
-      // console.log('購物車沒有資料');
+    .catch(err => {
+      console.log(err);
     });
 }
 
@@ -223,8 +233,7 @@ function renderCarts(cartsData) {
     cartsList.innerHTML = `
       <tr class="text-center">
         <td class="border-0 fs-3">目前購物車無商品!</td>
-      </tr>
-    `;
+      </tr>`;
   } else {
     const cartsList = document.querySelector('#cartsList');
     thead.classList.remove('d-none');
@@ -236,16 +245,15 @@ function renderCarts(cartsData) {
             <img src="${item.product.images}" alt="${item.product.title}" class="cart-product-img">
             <p class="lh-lg">${item.product.title}</p>
           </th>
-          <td>NT$${item.product.price}</td>
+          <td>NT$${toThousand(item.product.price)}</td>
           <td>${item.quantity}</td>
-          <td>NT$${item.product.price * item.quantity}</td>
+          <td>NT$${toThousand(item.product.price * item.quantity)}</td>
           <td class="text-end">
             <a href="#!" class="border-0 bg-transparent link-black" data-id="${item.id}">
               <i class="fa-solid fa-x" data-id="${item.id}"></i>
             </a>
           </td>
-        </tr>
-      `;
+        </tr>`;
     });
     // 總金額
     str += `
@@ -258,7 +266,7 @@ function renderCarts(cartsData) {
         <td class="border-0">
           <p>總金額</p>
         </td>
-        <td class="border-0 fs-3">NT$${total}</td>
+        <td class="border-0 fs-3">NT$${toThousand(total)}</td>
       </tr>
     `
     cartsList.innerHTML = str;
@@ -285,10 +293,10 @@ function addToCarts(id) {
   axios.post(urlCarts, data)
   .then(() => {
     getCarts();
-    swalCartsSuccess();
+    swalSuccess('已加入購物車', 'success');
   })
   .catch(() => {
-    swalCartsError();
+    swalError('未加入購物車', 'error');
   });
 }
 
@@ -301,17 +309,25 @@ function btnClearCartsClick() {
   });
 }
 
-// 購物車刪除事件
+// 購物車點擊事件
 function cartsListClick() {
   cartsList.addEventListener('click', e => {
     e.preventDefault();
     const cartItemId = e.target.getAttribute('data-id');
-  
+
     if(cartItemId === null) {
       return;
     } else {
       deleteCartsItem(cartItemId);
+      return;
     }
+    // if (e.target.nodeName === 'SELECT'){
+    //   e.target.addEventListener('change', e => {
+    //     const cartItemNum = e.target.value;
+    //     const cartItemId = e.target.dataset.id;
+    //     editCartsNum(cartItemId, Number(cartItemNum));
+    //     return;
+    //   })
   });
 }
 
@@ -332,12 +348,19 @@ function deleteCartsItem(id) {
 function deleteAllCarts() {
   axios.delete(urlCarts)
     .then(() => {
-      swalDeleteCartsSuccess();
+      swalSuccess('已清空購物車', 'success');
       getCarts();
     })
-    .catch(() => {
-      swalDeleteCartsError();
+    .catch(err => {
+      console.log(err);
+      swalError('清空失敗', 'error');
     });
+}
+
+// 千分位
+function toThousand(num) {
+  const numStr = num.toString();
+  return numStr.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
 }
 
 // 好評推薦拖拉功能
@@ -381,3 +404,38 @@ function recommendationDrag() {
     ele.addEventListener("mousedown", mouseDownHandler);
   });
 }
+
+// 渲染購物車數量下拉
+// function renderCartsNum(num) {
+//   const maxNum = 10;
+//   const select = document.querySelector('[data-qty]');
+//   let str = '';
+//   for(let i = 1; i <= maxNum; i++) {
+//     str += `<option value="${i}">${i}</option>`
+//   }
+//   console.log(select);
+  // select.innerHTML = str;
+  // select.value = num;
+  // return str;
+// }
+
+// 編輯購物車產品數量
+// function editCartsNum(id, num) {
+//   const data = {
+//   "data": {
+//     "id": id,
+//     "quantity": num
+//   }
+// }
+
+//   axios.patch(urlCarts, data)
+//     .then(res => {
+//       // console.log(res.data.carts);
+//       const carts = res.data.carts;
+//       console.log(carts);
+//       renderCarts(carts);
+//     })
+//     .catch(err => {
+//       console.log(err);
+//     })
+// }
