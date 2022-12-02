@@ -9,7 +9,8 @@ let cartsData;
 
 // 不同頁面分別執行初始化
 function locationPathChanged() {
-  if (location.pathname.includes('index')) {
+  if (location.pathname.includes('index') ||
+      location.pathname === '/') {
     // 首頁初始化
     function init() {
       getProducts();
