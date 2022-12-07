@@ -2,6 +2,11 @@
 
 var api_path = "js-2022";
 var token = "kk6wTiHvysgMHTb81Mkv3q2j0M23";
+var config = {
+  headers: {
+    'Authorization': token
+  }
+};
 "use strict";
 
 var urlAdminOrders = "https://livejs-api.hexschool.io/api/livejs/v1/admin/".concat(api_path, "/orders");
@@ -17,9 +22,13 @@ function orderCreateDate(ms) {
 
 ; // 渲染訂單畫面
 
-function renderOrders() {
+function renderOrders(ordersData) {
   var orderList = document.querySelector('#ordersList');
-  var str = '';
+  var str = ''; // 訂單排序新到舊
+
+  ordersData.sort(function (a, b) {
+    return b.createdAt - a.createdAt;
+  });
   ordersData.forEach(function (order) {
     var status = order.paid ? '已處理' : '未處理';
     var orderDate = orderCreateDate(order.createdAt);
@@ -29,6 +38,7 @@ function renderOrders() {
     str += "\n    <tr class=\"align-middle\">\n      <th scope=\"row\">".concat(order.id, "</th>\n      <td>").concat(order.user.name, "<br>").concat(order.user.tel, "</td>\n      <td>").concat(order.user.address, "</td>\n      <td>").concat(order.user.email, "</td>\n      <td>").concat(orderProducts, "</td>\n      <td>").concat(orderDate, "</td>\n      <td class=\"text-info\">\n        <a href=\"#!\" class=\"text-decoration-underline link-info\" data-paid=\"").concat(order.paid, "\" data-id=\"").concat(order.id, "\">\n          ").concat(status, "\n        </a>\n      </td>\n      <td>\n        <button type=\"button\" class=\"btn btn-danger\" data-id=\"").concat(order.id, "\" >\u522A\u9664</button>\n      </td>\n    </tr>");
   });
   orderList.innerHTML = str;
+  renderBtnDelete();
 } // 渲染按鈕 清除全部訂單
 
 
@@ -46,15 +56,10 @@ function renderBtnDelete() {
 
 
 function getOrders() {
-  axios.get(urlAdminOrders, {
-    headers: {
-      'Authorization': token
-    }
-  }).then(function (res) {
+  axios.get(urlAdminOrders, config).then(function (res) {
     ordersData = res.data.orders;
     renderChart(ordersData);
-    renderOrders();
-    renderBtnDelete();
+    renderOrders(ordersData);
   })["catch"](function (err) {
     console.log(err);
   });
@@ -88,47 +93,41 @@ function orderListClick() {
 
 function editOrders(id, isPaid) {
   isPaid = !isPaid;
-  axios.put(urlAdminOrders, {
+  var data = {
     "data": {
       "id": id,
       "paid": isPaid
     }
-  }, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token
-    }
-  }).then(function () {
-    getOrders();
+  };
+  axios.put(urlAdminOrders, data, config).then(function (res) {
+    ordersData = res.data.orders;
+    renderOrders(ordersData);
     swalSuccess('修改訂單成功', 'success');
   })["catch"](function () {
-    swalError('修改頂單失敗', 'error');
+    swalError('修改訂單失敗', 'error');
   });
 } // 刪除單筆訂單
 
 
 function deleteOrder(id) {
   var urlDeleteOrder = "https://livejs-api.hexschool.io/api/livejs/v1/admin/".concat(api_path, "/orders/").concat(id);
-  axios["delete"](urlDeleteOrder, {
-    headers: {
-      'Authorization': token
-    }
-  }).then(function () {
-    getOrders();
+  axios["delete"](urlDeleteOrder, config).then(function (res) {
+    ordersData = res.data.orders;
+    renderOrders(ordersData);
+    renderChart(ordersData);
     swalSuccess('已刪除單筆訂單', 'success');
-  })["catch"](function () {
+  })["catch"](function (err) {
+    console.log(err);
     swalError('刪除單筆訂單失敗', 'error');
   });
 } // 刪除所有訂單
 
 
 function deleteOrderAll() {
-  axios["delete"](urlAdminOrders, {
-    headers: {
-      'Authorization': token
-    }
-  }).then(function () {
-    getOrders();
+  axios["delete"](urlAdminOrders, config).then(function (res) {
+    ordersData = res.data.orders;
+    renderOrders(ordersData);
+    renderChart(ordersData);
     swalSuccess('已刪除所有訂單', 'success');
   })["catch"](function () {
     swalError('目前沒有訂單', 'warning');
@@ -172,35 +171,23 @@ var urlProducts = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".conc
 var urlCarts = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts");
 var productList = document.querySelector('#productList');
 var form = document.querySelector('#orderForm');
+var cartsList = document.querySelector('#cartsList');
 var productListData;
 var productCategory = {};
-var cartsData; // 不同頁面分別執行初始化
+var cartsData = []; // 不同頁面分別執行初始化
 
-function locationPathChanged() {
-  if (location.pathname.includes('index') || location.pathname === '/' || location.pathname === /WoWoRoom/) {
-    // 首頁初始化
-    var init = function init() {
-      getProducts();
-      getCarts();
-      recommendationDrag();
-      submitForm();
-    };
+if (location.pathname.includes('index') || location.pathname === '/' || location.pathname === /WoWoRoom/) {
+  // 首頁
+  getProducts();
+  getCarts();
+  recommendationDrag();
+  submitForm();
+} else if (location.pathname.includes('admin')) {
+  // 後臺
+  getOrders();
+  orderListClick();
+} // 驗證套件
 
-    init();
-    return;
-  } else if (location.pathname.includes('admin')) {
-    // 後臺初始化
-    var initAdmin = function initAdmin() {
-      getOrders();
-      orderListClick();
-    };
-
-    initAdmin();
-    return;
-  }
-}
-
-locationPathChanged(); // 驗證套件
 
 var constraints = {
   姓名: {
@@ -314,8 +301,8 @@ function getProducts() {
   axios.get(urlProducts).then(function (res) {
     productListData = res.data.products;
     renderProductList(productListData);
-    productListClick();
     productFilterChange(productListData);
+    productListClick();
   })["catch"](function (err) {
     console.log(err);
   });
@@ -346,11 +333,13 @@ function renderProductList(productListData) {
     str += "\n      <li class=\"products-item col-md-6 col-lg-4 col-xl-3\">\n        <div class=\"card p-0\">\n          <span class=\"products-tag\">\u65B0\u54C1</span>\n          <img src=\"".concat(product.images, "\" class=\"card-img-top\" alt=\"").concat(product.title, "\">\n          <div class=\"card-body p-0\">\n            <button type=\"button\" class=\"btn btn-black rounded-0 pb-2 w-100\" data-id=\"").concat(product.id, "\">\u52A0\u5165\u8CFC\u7269\u8ECA</button>\n            <h5 class=\"card-title pb-2\">").concat(product.title, "</h5>\n            <p class=\"card-text fs-5 text-decoration-line-through\">NT$").concat(toThousand(product.origin_price), "</p>\n            <p class=\"card-text fs-3\">NT$").concat(toThousand(product.price), "</p>\n          </div>\n        </div>\n      </li>\n    ");
   });
   productList.innerHTML = str;
-} // 加入購物車
+} // 加入購物車事件
 
 
 function productListClick() {
   productList.addEventListener('click', function (e) {
+    e.preventDefault();
+
     if (e.target.nodeName !== 'BUTTON') {
       return;
     }
@@ -365,7 +354,8 @@ function getCarts() {
   axios.get(urlCarts).then(function (res) {
     cartsData = res.data.carts;
     renderCarts(cartsData);
-  })["catch"](function (err) {// console.log(err);
+  })["catch"](function (err) {
+    console.log(err);
   });
 } // 顯示購物車資料
 
@@ -379,8 +369,6 @@ function renderCarts(cartsData) {
     thead.classList.add('d-none');
     cartsList.innerHTML = "\n      <tr class=\"text-center\">\n        <td class=\"border-0 fs-3\">\u76EE\u524D\u8CFC\u7269\u8ECA\u7121\u5546\u54C1!</td>\n      </tr>";
   } else {
-    var _cartsList = document.querySelector('#cartsList');
-
     thead.classList.remove('d-none');
     cartsData.forEach(function (item) {
       total += item.quantity * item.product.price;
@@ -388,9 +376,16 @@ function renderCarts(cartsData) {
     }); // 總金額
 
     str += "\n      <tr class=\"carts-total\">\n        <td class=\"border-0\">\n          <button type=\"button\" class=\"btn btn-outline-black py-3 px-6\" id=\"btnClearCarts\">\u522A\u9664\u6240\u6709\u54C1\u9805</button>\n        </td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\">\n          <p>\u7E3D\u91D1\u984D</p>\n        </td>\n        <td class=\"border-0 fs-3\">NT$".concat(toThousand(total), "</td>\n      </tr>\n    ");
-    _cartsList.innerHTML = str;
-    btnClearCartsClick();
-    cartsListClick();
+    cartsList.innerHTML = str; // 刪除所有選項按鈕
+
+    var btnClearCarts = document.querySelector('#btnClearCarts');
+
+    if (btnClearCarts) {
+      btnClearCarts.addEventListener('click', function (e) {
+        e.preventDefault();
+        deleteAllCarts();
+      });
+    }
   }
 } // 加入購物車
 
@@ -408,33 +403,27 @@ function addToCarts(id) {
       "quantity": num
     }
   };
-  axios.post(urlCarts, data).then(function () {
-    getCarts();
+  axios.post(urlCarts, data).then(function (res) {
+    cartsData = res.data.carts;
+    renderCarts(cartsData);
     swalSuccess('已加入購物車', 'success');
-  })["catch"](function () {
-    swalError('未加入購物車', 'error');
-  });
-} // 綁定清除購物車按鈕
-
-
-function btnClearCartsClick() {
-  var btnClearCarts = document.querySelector('#btnClearCarts');
-  btnClearCarts.addEventListener('click', function (e) {
-    e.preventDefault();
-    deleteAllCarts();
+  })["catch"](function (err) {
+    console.log(err);
+    swalError('加入購物車失敗', 'error');
   });
 } // 購物車刪除事件
 
 
-function cartsListClick() {
+if (cartsList) {
   cartsList.addEventListener('click', function (e) {
     e.preventDefault();
     var cartItemId = e.target.getAttribute('data-id');
 
-    if (cartItemId === null) {
+    if (e.target.nodeName !== 'A' && e.target.nodeName !== 'I') {
       return;
     } else {
       deleteCartsItem(cartItemId);
+      return;
     }
   });
 } // 刪除購物車單筆
@@ -442,18 +431,19 @@ function cartsListClick() {
 
 function deleteCartsItem(id) {
   var url = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts/").concat(id);
-  axios["delete"](url, id).then(function () {
-    getCarts();
-  })["catch"](function () {
-    console.log('沒有這筆資料');
+  axios["delete"](url, id).then(function (res) {
+    cartsData = res.data.carts;
+    renderCarts(cartsData);
+  })["catch"](function (err) {
+    console.log(err);
   });
 } // 刪除購物車所有品項
 
 
 function deleteAllCarts() {
-  axios["delete"](urlCarts).then(function () {
+  axios["delete"](urlCarts).then(function (res) {
+    renderCarts(res.data.carts);
     swalSuccess('已清空購物車', 'success');
-    getCarts();
   })["catch"](function (err) {
     console.log(err);
     swalError('清空失敗', 'error');
