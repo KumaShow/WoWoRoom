@@ -2,36 +2,26 @@ const urlProducts = `https://livejs-api.hexschool.io/api/livejs/v1/customer/${ap
 const urlCarts = `https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`;
 const productList = document.querySelector('#productList');
 const form = document.querySelector('#orderForm');
+const cartsList = document.querySelector('#cartsList');
 
 let productListData;
 let productCategory = {};
-let cartsData;
+let cartsData = [];
 
 // 不同頁面分別執行初始化
-function locationPathChanged() {
-  if (location.pathname.includes('index') ||
-      location.pathname === '/' ||
-      location.pathname === /WoWoRoom/) {
-    // 首頁初始化
-    function init() {
-      getProducts();
-      getCarts();
-      recommendationDrag();
-      submitForm();
-    }
-    init();
-    return;
-  } else if (location.pathname.includes('admin')){
-    // 後臺初始化
-    function initAdmin() {
-      getOrders();
-      orderListClick();
-    }
-    initAdmin();
-    return;
-  }
+if (location.pathname.includes('index') ||
+    location.pathname === '/' ||
+    location.pathname === /WoWoRoom/) {
+  // 首頁
+  getProducts();
+  getCarts();
+  recommendationDrag();
+  submitForm();
+} else if (location.pathname.includes('admin')){
+  // 後臺
+  getOrders();
+  orderListClick();
 }
-locationPathChanged();
 
 // 驗證套件
 const constraints = {
@@ -153,8 +143,8 @@ function getProducts() {
     .then((res) => {
       productListData = res.data.products;
       renderProductList(productListData);
-      productListClick();
       productFilterChange(productListData);
+      productListClick();
     })
     .catch((err) => {
       console.log(err);
@@ -202,9 +192,10 @@ function renderProductList(productListData) {
   productList.innerHTML = str;
 }
 
-// 加入購物車
+// 加入購物車事件
 function productListClick() {
   productList.addEventListener('click', e => {
+    e.preventDefault();
     if(e.target.nodeName !== 'BUTTON') {
       return;
     }
@@ -216,12 +207,12 @@ function productListClick() {
 // 取得購物車資料
 function getCarts() {
   axios.get(urlCarts)
-    .then(res => {
+    .then((res) => {
       cartsData = res.data.carts;
       renderCarts(cartsData);
     })
-    .catch(err => {
-      // console.log(err);
+    .catch((err) => {
+      console.log(err);
     });
 }
 
@@ -238,7 +229,6 @@ function renderCarts(cartsData) {
         <td class="border-0 fs-3">目前購物車無商品!</td>
       </tr>`;
   } else {
-    const cartsList = document.querySelector('#cartsList');
     thead.classList.remove('d-none');
     cartsData.forEach(item => {
       total += item.quantity * item.product.price;
@@ -275,19 +265,27 @@ function renderCarts(cartsData) {
       </tr>
     `
     cartsList.innerHTML = str;
-    btnClearCartsClick();
-    cartsListClick();
+    // 刪除所有選項按鈕
+    const btnClearCarts = document.querySelector('#btnClearCarts');
+    if(btnClearCarts) {
+      btnClearCarts.addEventListener('click', e => {
+        e.preventDefault();
+        deleteAllCarts();
+      });
+    }
   }
 }
 
 // 加入購物車
 function addToCarts(id) {
   let num = 1;
+
   cartsData.forEach(item => {
     if(item.product.id === id) {
       num = item.quantity += 1;
     }
   })
+
   const data = {
     "data": {
       "productId": id,
@@ -296,34 +294,28 @@ function addToCarts(id) {
   };
 
   axios.post(urlCarts, data)
-  .then(() => {
-    getCarts();
+  .then((res) => {
+    cartsData = res.data.carts;
+    renderCarts(cartsData);
     swalSuccess('已加入購物車', 'success');
   })
-  .catch(() => {
-    swalError('未加入購物車', 'error');
-  });
-}
-
-// 綁定清除購物車按鈕
-function btnClearCartsClick() {
-  const btnClearCarts = document.querySelector('#btnClearCarts');
-  btnClearCarts.addEventListener('click', e => {
-    e.preventDefault();
-    deleteAllCarts();
+  .catch((err) => {
+    console.log(err);
+    swalError('加入購物車失敗', 'error');
   });
 }
 
 // 購物車刪除事件
-function cartsListClick() {
+if(cartsList) {
   cartsList.addEventListener('click', e => {
     e.preventDefault();
     const cartItemId = e.target.getAttribute('data-id');
-  
-    if(cartItemId === null) {
+
+    if(e.target.nodeName !== 'A' && e.target.nodeName !== 'I') {
       return;
     } else {
       deleteCartsItem(cartItemId);
+      return;
     }
   });
 }
@@ -331,24 +323,24 @@ function cartsListClick() {
 // 刪除購物車單筆
 function deleteCartsItem(id) {
   const url = `https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/${id}`;
-
-  axios.delete(url,id)
-    .then(() => {
-      getCarts();
+  axios.delete(url, id)
+    .then((res) => {
+      cartsData = res.data.carts;
+      renderCarts(cartsData);
     })
-    .catch(() => {
-      console.log('沒有這筆資料');
+    .catch((err) => {
+      console.log(err);
     })
 }
 
 // 刪除購物車所有品項
 function deleteAllCarts() {
   axios.delete(urlCarts)
-    .then(() => {
+    .then((res) => {
+      renderCarts(res.data.carts);
       swalSuccess('已清空購物車', 'success');
-      getCarts();
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
       swalError('清空失敗', 'error');
     });
