@@ -16,9 +16,11 @@ function orderCreateDate(ms){
 };
 
 // 渲染訂單畫面
-function renderOrders() {
+function renderOrders(ordersData) {
   const orderList = document.querySelector('#ordersList');
   let str = '';
+  // 訂單排序新到舊
+  ordersData.sort((a,b) => b.createdAt - a.createdAt);
 
   ordersData.forEach(order => {
     let status = order.paid ? '已處理' : '未處理';
@@ -46,6 +48,7 @@ function renderOrders() {
     </tr>`
   })
   orderList.innerHTML = str;
+  renderBtnDelete();
 }
 
 // 渲染按鈕 清除全部訂單
@@ -61,18 +64,15 @@ function renderBtnDelete() {
 
 // 取得訂單資料
 function getOrders() {
-  axios.get(urlAdminOrders,{
-    headers: {
-      'Authorization': token
-    }
-  }).then(res => {
-    ordersData = res.data.orders;
-    renderChart(ordersData);
-    renderOrders();
-    renderBtnDelete();
-  }).catch(err => {
-    console.log(err);
-  });
+  axios.get(urlAdminOrders,config)
+    .then((res) => {
+      ordersData = res.data.orders;
+      renderChart(ordersData);
+      renderOrders(ordersData);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }
 
 // 訂單點擊事件監聽
@@ -101,54 +101,52 @@ function orderListClick() {
 // 修改訂單狀態
 function editOrders(id, isPaid) {
   isPaid = !isPaid;
-  axios.put(urlAdminOrders,
-    {
+
+  const data = {
       "data": {
         "id": id,
         "paid": isPaid
       }
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token
-      }
-    })
-  .then(() => {
-    getOrders();
-    swalSuccess('修改訂單成功', 'success');
-  }).catch(() => {
-    swalError('修改頂單失敗', 'error');
-  });
+    };
+
+  axios.put(urlAdminOrders, data, config)
+    .then((res) => {
+      ordersData = res.data.orders;
+      renderOrders(ordersData);
+      swalSuccess('修改訂單成功', 'success');
+    }).catch(() => {
+      swalError('修改訂單失敗', 'error');
+    });
 }
 
 // 刪除單筆訂單
 function deleteOrder(id) {
   const urlDeleteOrder = `https://livejs-api.hexschool.io/api/livejs/v1/admin/${api_path}/orders/${id}`;
-  axios.delete(urlDeleteOrder,{
-    headers: {
-      'Authorization': token
-    }
-  }).then(() => {
-    getOrders();
-    swalSuccess('已刪除單筆訂單', 'success');
-  }).catch(() => {
-    swalError('刪除單筆訂單失敗', 'error');
-  });
+  axios.delete(urlDeleteOrder,config)
+    .then((res) => {
+      ordersData = res.data.orders;
+      renderOrders(ordersData);
+      renderChart(ordersData);
+      swalSuccess('已刪除單筆訂單', 'success');
+    })
+    .catch((err) => {
+      console.log(err);
+      swalError('刪除單筆訂單失敗', 'error');
+    });
 }
 
 // 刪除所有訂單
 function deleteOrderAll() {
-  axios.delete(urlAdminOrders,{
-    headers: {
-      'Authorization': token
-    }
-  }).then(() => {
-    getOrders();
-    swalSuccess('已刪除所有訂單', 'success');
-  }).catch(() => {
-    swalError('目前沒有訂單', 'warning');
-  })
+  axios.delete(urlAdminOrders,config)
+    .then((res) => {
+      ordersData = res.data.orders;
+      renderOrders(ordersData);
+      renderChart(ordersData);
+      swalSuccess('已刪除所有訂單', 'success');
+    })
+    .catch(() => {
+      swalError('目前沒有訂單', 'warning');
+    })
 }
 
 // c3 圖表
