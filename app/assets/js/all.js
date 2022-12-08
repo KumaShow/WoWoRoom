@@ -234,15 +234,15 @@ function renderCarts(cartsData) {
       total += item.quantity * item.product.price;
       str += `
         <tr>
-          <th scope="row" class="d-flex align-items-center fw-normal">
+          <td scope="row" class="d-flex align-items-center fw-normal">
             <img src="${item.product.images}" alt="${item.product.title}" class="cart-product-img">
             <p class="lh-lg">${item.product.title}</p>
           </th>
           <td>NT$${toThousand(item.product.price)}</td>
-          <td>
-            <button class="me-2" data-btn="plus" data-id="${item.id}" data-num="${item.quantity}">+</button>
+          <td class="text-center text-md-start">
+            <button class="md-me-1 border-0 bg-transparent" data-btn="plus" data-id="${item.id}" data-num="${item.quantity}">+</button>
             ${item.quantity}
-            <button class="ms-2" data-btn="minus" data-id="${item.id}" data-num="${item.quantity}">-</button>
+            <button class="md-ms-1 border-0 bg-transparent" data-btn="minus" data-id="${item.id}" data-num="${item.quantity}">-</button>
           </td>
           <td>NT$${toThousand(item.product.price * item.quantity)}</td>
           <td class="text-end">
@@ -312,17 +312,19 @@ if(cartsList) {
   cartsList.addEventListener('click', e => {
     e.preventDefault();
     const cartItemId = e.target.getAttribute('data-id');
-    const btnPlus = document.querySelector("[data-btn='plus']");
-    const btnMinus = document.querySelector("[data-btn='minus']");
+    const btnCount = e.target.getAttribute('data-btn');
     let num = Number(e.target.dataset.num);
-    
+
     // 數量更改
-    if(e.target === btnPlus) {
+    if(btnCount === 'plus') {
       num = num += 1;
       updateCarts(cartItemId, num);
-    } else if (e.target === btnMinus) {
+    } else if (btnCount === 'minus') {
       num = num -= 1;
-      updateCarts(cartItemId, num);
+      // 數量小於 1 刪除產品
+      num < 1 
+        ? deleteCartsItem(cartItemId) 
+        : updateCarts(cartItemId, num);
     }
 
     // 刪除事件
@@ -352,7 +354,8 @@ function deleteCartsItem(id) {
 function deleteAllCarts() {
   axios.delete(urlCarts)
     .then((res) => {
-      renderCarts(res.data.carts);
+      cartsData = res.data.carts;
+      renderCarts(cartsData);
       swalSuccess('已清空購物車', 'success');
     })
     .catch((err) => {
@@ -372,6 +375,7 @@ function updateCarts(id, num) {
   };
   axios.patch(urlCarts, data)
     .then((res) => {
+      cartsData = res.data.carts;
       renderCarts(res.data.carts);
       // swalSuccess('已更改購物車', 'success');
     })
