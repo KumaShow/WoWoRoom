@@ -372,7 +372,7 @@ function renderCarts(cartsData) {
     thead.classList.remove('d-none');
     cartsData.forEach(function (item) {
       total += item.quantity * item.product.price;
-      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td>\n            ").concat(item.quantity, "\n          </td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
+      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td>\n            <button class=\"me-2\" data-btn=\"plus\" data-id=\"").concat(item.id, "\" data-num=\"").concat(item.quantity, "\">+</button>\n            ").concat(item.quantity, "\n            <button class=\"ms-2\" data-btn=\"minus\" data-id=\"").concat(item.id, "\" data-num=\"").concat(item.quantity, "\">-</button>\n          </td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
     }); // 總金額
 
     str += "\n      <tr class=\"carts-total\">\n        <td class=\"border-0\">\n          <button type=\"button\" class=\"btn btn-outline-black py-3 px-6\" id=\"btnClearCarts\">\u522A\u9664\u6240\u6709\u54C1\u9805</button>\n        </td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\">\n          <p>\u7E3D\u91D1\u984D</p>\n        </td>\n        <td class=\"border-0 fs-3\">NT$".concat(toThousand(total), "</td>\n      </tr>\n    ");
@@ -411,13 +411,25 @@ function addToCarts(id) {
     console.log(err);
     swalError('加入購物車失敗', 'error');
   });
-} // 購物車刪除事件
+} // 購物車刪除事件 & 更改數量
 
 
 if (cartsList) {
   cartsList.addEventListener('click', function (e) {
     e.preventDefault();
     var cartItemId = e.target.getAttribute('data-id');
+    var btnPlus = document.querySelector("[data-btn='plus']");
+    var btnMinus = document.querySelector("[data-btn='minus']");
+    var num = Number(e.target.dataset.num); // 數量更改
+
+    if (e.target === btnPlus) {
+      num = num += 1;
+      updateCarts(cartItemId, num);
+    } else if (e.target === btnMinus) {
+      num = num -= 1;
+      updateCarts(cartItemId, num);
+    } // 刪除事件
+
 
     if (e.target.nodeName !== 'A' && e.target.nodeName !== 'I') {
       return;
@@ -447,6 +459,22 @@ function deleteAllCarts() {
   })["catch"](function (err) {
     console.log(err);
     swalError('清空失敗', 'error');
+  });
+} // 更改購物車數量
+
+
+function updateCarts(id, num) {
+  var data = {
+    "data": {
+      "id": id,
+      "quantity": num
+    }
+  };
+  axios.patch(urlCarts, data).then(function (res) {
+    renderCarts(res.data.carts); // swalSuccess('已更改購物車', 'success');
+  })["catch"](function (err) {
+    console.log(err);
+    swalError(err.response.data.message, 'error');
   });
 } // 千分位
 
