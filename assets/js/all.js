@@ -372,7 +372,7 @@ function renderCarts(cartsData) {
     thead.classList.remove('d-none');
     cartsData.forEach(function (item) {
       total += item.quantity * item.product.price;
-      str += "\n        <tr>\n          <th scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td>\n            <button class=\"me-2\" data-btn=\"plus\" data-id=\"").concat(item.id, "\" data-num=\"").concat(item.quantity, "\">+</button>\n            ").concat(item.quantity, "\n            <button class=\"ms-2\" data-btn=\"minus\" data-id=\"").concat(item.id, "\" data-num=\"").concat(item.quantity, "\">-</button>\n          </td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
+      str += "\n        <tr>\n          <td scope=\"row\" class=\"d-flex align-items-center fw-normal\">\n            <img src=\"".concat(item.product.images, "\" alt=\"").concat(item.product.title, "\" class=\"cart-product-img\">\n            <p class=\"lh-lg\">").concat(item.product.title, "</p>\n          </th>\n          <td>NT$").concat(toThousand(item.product.price), "</td>\n          <td class=\"text-center text-md-start\">\n            <button class=\"md-me-1 border-0 bg-transparent\" data-btn=\"plus\" data-id=\"").concat(item.id, "\" data-num=\"").concat(item.quantity, "\">+</button>\n            ").concat(item.quantity, "\n            <button class=\"md-ms-1 border-0 bg-transparent\" data-btn=\"minus\" data-id=\"").concat(item.id, "\" data-num=\"").concat(item.quantity, "\">-</button>\n          </td>\n          <td>NT$").concat(toThousand(item.product.price * item.quantity), "</td>\n          <td class=\"text-end\">\n            <a href=\"#!\" class=\"border-0 bg-transparent link-black\" data-id=\"").concat(item.id, "\">\n              <i class=\"fa-solid fa-x\" data-id=\"").concat(item.id, "\"></i>\n            </a>\n          </td>\n        </tr>");
     }); // 總金額
 
     str += "\n      <tr class=\"carts-total\">\n        <td class=\"border-0\">\n          <button type=\"button\" class=\"btn btn-outline-black py-3 px-6\" id=\"btnClearCarts\">\u522A\u9664\u6240\u6709\u54C1\u9805</button>\n        </td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\"></td>\n        <td class=\"border-0\">\n          <p>\u7E3D\u91D1\u984D</p>\n        </td>\n        <td class=\"border-0 fs-3\">NT$".concat(toThousand(total), "</td>\n      </tr>\n    ");
@@ -418,16 +418,16 @@ if (cartsList) {
   cartsList.addEventListener('click', function (e) {
     e.preventDefault();
     var cartItemId = e.target.getAttribute('data-id');
-    var btnPlus = document.querySelector("[data-btn='plus']");
-    var btnMinus = document.querySelector("[data-btn='minus']");
+    var btnCount = e.target.getAttribute('data-btn');
     var num = Number(e.target.dataset.num); // 數量更改
 
-    if (e.target === btnPlus) {
+    if (btnCount === 'plus') {
       num = num += 1;
       updateCarts(cartItemId, num);
-    } else if (e.target === btnMinus) {
-      num = num -= 1;
-      updateCarts(cartItemId, num);
+    } else if (btnCount === 'minus') {
+      num = num -= 1; // 數量小於 1 刪除產品
+
+      num < 1 ? deleteCartsItem(cartItemId) : updateCarts(cartItemId, num);
     } // 刪除事件
 
 
@@ -454,7 +454,8 @@ function deleteCartsItem(id) {
 
 function deleteAllCarts() {
   axios["delete"](urlCarts).then(function (res) {
-    renderCarts(res.data.carts);
+    cartsData = res.data.carts;
+    renderCarts(cartsData);
     swalSuccess('已清空購物車', 'success');
   })["catch"](function (err) {
     console.log(err);
@@ -471,6 +472,7 @@ function updateCarts(id, num) {
     }
   };
   axios.patch(urlCarts, data).then(function (res) {
+    cartsData = res.data.carts;
     renderCarts(res.data.carts); // swalSuccess('已更改購物車', 'success');
   })["catch"](function (err) {
     console.log(err);
