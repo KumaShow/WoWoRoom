@@ -11,7 +11,7 @@ let cartsData = [];
 // 不同頁面分別執行初始化
 if (location.pathname.includes('index') ||
     location.pathname === '/' ||
-    location.pathname === /WoWoRoom/) {
+    location.pathname === '/WoWoRoom/') {
   // 首頁
   getProducts();
   getCarts();
@@ -240,7 +240,9 @@ function renderCarts(cartsData) {
           </th>
           <td>NT$${toThousand(item.product.price)}</td>
           <td>
+            <button class="me-2" data-btn="plus" data-id="${item.id}" data-num="${item.quantity}">+</button>
             ${item.quantity}
+            <button class="ms-2" data-btn="minus" data-id="${item.id}" data-num="${item.quantity}">-</button>
           </td>
           <td>NT$${toThousand(item.product.price * item.quantity)}</td>
           <td class="text-end">
@@ -305,12 +307,25 @@ function addToCarts(id) {
   });
 }
 
-// 購物車刪除事件
+// 購物車刪除事件 & 更改數量
 if(cartsList) {
   cartsList.addEventListener('click', e => {
     e.preventDefault();
     const cartItemId = e.target.getAttribute('data-id');
+    const btnPlus = document.querySelector("[data-btn='plus']");
+    const btnMinus = document.querySelector("[data-btn='minus']");
+    let num = Number(e.target.dataset.num);
+    
+    // 數量更改
+    if(e.target === btnPlus) {
+      num = num += 1;
+      updateCarts(cartItemId, num);
+    } else if (e.target === btnMinus) {
+      num = num -= 1;
+      updateCarts(cartItemId, num);
+    }
 
+    // 刪除事件
     if(e.target.nodeName !== 'A' && e.target.nodeName !== 'I') {
       return;
     } else {
@@ -343,6 +358,26 @@ function deleteAllCarts() {
     .catch((err) => {
       console.log(err);
       swalError('清空失敗', 'error');
+    });
+}
+
+// 更改購物車數量
+function updateCarts(id, num) {
+
+  const data = {
+    "data": {
+      "id": id,
+      "quantity": num
+    }
+  };
+  axios.patch(urlCarts, data)
+    .then((res) => {
+      renderCarts(res.data.carts);
+      // swalSuccess('已更改購物車', 'success');
+    })
+    .catch((err) => {
+      console.log(err);
+      swalError(err.response.data.message, 'error');
     });
 }
 
