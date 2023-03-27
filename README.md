@@ -1,5 +1,5 @@
 # WOWOROOM
-六角學院 JS 直播班最終作業，依照設計稿切版，並透過 JavaScript 實現網站功能。
+依照設計稿切版，並透過 JavaScript 實現網站功能。
 
 > 前台: [點我](https://kumashow.github.io/WoWoRoom/)
 > 
